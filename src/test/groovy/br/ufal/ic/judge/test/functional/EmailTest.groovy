@@ -1,4 +1,4 @@
-package br.ufal.ic.judge
+package br.ufal.ic.judge.test.functional
 
 import br.ufal.ic.judge.commons.ClientRPC
 
@@ -12,9 +12,14 @@ class EmailTest extends ClientRPC {
         super(exchangeName, key);
     }
 
+    public void close() {
+        exchange.closeConnection();
+        this.listen = false
+    }
+
     void doWork (String message){
         response = message
-        println message
+        this.close()
     }
 
     public String getResponse() {

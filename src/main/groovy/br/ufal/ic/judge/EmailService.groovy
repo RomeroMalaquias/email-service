@@ -64,24 +64,64 @@ class EmailService extends ServerRPC {
 
 
         } catch(Exception e) {
-            email['__result'] = "INVALID_FORMAT"
+            email['__result'] = "FAIL"
+            email['__errMSG'] << "Invalid JSON format"
+            return JsonOutput.toJson(email)
         }
 
 
         try {
-            if(email.subject && email.body && email.to) {
+            def err = false;
+            def emailPattern = /[_A-Za-z0-9-]+(.[_A-Za-z0-9-]+)*@[A-Za-z0-9]+(.[A-Za-z0-9]+)*(.[A-Za-z]{2,})/
+            if (!email.to) {
+                err = true
+                email['__errMSG'] = email['__errMSG']? email['__errMSG'] : []
+                email['__status'] = "FAIL"
+                email['__errMSG'] << "Field 'to' cannot be empty"
+            } else if (email.to.size() > 255) {
+                err = true
+                email['__errMSG'] = email['__errMSG']? email['__errMSG'] : []
+                email['__status'] = "FAIL"
+                email['__errMSG'] << "Field 'to' cannot be greather than 255 caracteres"
+            } else if (email ==~ emailPattern) {
+                err = true
+                email['__errMSG'] = email['__errMSG']? email['__errMSG'] : []
+                email['__status'] = "FAIL"
+                email['__errMSG'] << "Field 'to' need to be a valid email format"
+            }
+            if (!email.subject) {
+                err = true
+                email['__errMSG'] = email['__errMSG']? email['__errMSG'] : []
+                email['__status'] = "FAIL"
+                email['__errMSG'] << "Field 'subject' cannot be empty"
+            } else if (email.subject.size() > 255) {
+                err = true
+                email['__errMSG'] = email['__errMSG']? email['__errMSG'] : []
+                email['__status'] = "FAIL"
+                email['__errMSG'] << "Field 'subject' cannot be greather than 255 caracteres"
+            }
+            if (email.body && email.body.size() > 510) {
+                err = true
+                email['__errMSG'] = email['__errMSG']? email['__errMSG'] : []
+                email['__status'] = "FAIL"
+                email['__errMSG'] << "Field 'body' cannot be greather than 255 caracteres"
+            }
+
+            if(!err) {
                 if (sendEmail(email)) {
-                    email['__result'] = "SENDED"
+                    email['__status'] = "SENDED"
                 } else {
+                    email['__errMSG'] = email['__errMSG']? email['__errMSG'] : []
                     email['__result'] = "FAIL"
+                    email['__errMSG'] << "An error has occurred when sending email"
                 }
-            } else {
-                email['__result'] = "INVALID_FORMAT"
             }
 
         } catch (Exception e) {
             e.printStackTrace()
-            email['__result'] = "INVALID_FORMAT"
+            email['__errMSG'] = email['__errMSG']? email['__errMSG'] : []
+            email['__result'] = "FAIL"
+            email['__errMSG'] << "Invalid format"
         }
         return JsonOutput.toJson(email)
     }
